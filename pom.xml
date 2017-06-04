@@ -7,8 +7,8 @@
 
     <groupId>org.uk.aeb</groupId>
     <artifactId>lastfm</artifactId>
-    <version>0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <version>0.2-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <name>Scala Spark application to analyse Enron e-mails</name>
     <url>https://github.com/aebay/lastfm</url>
