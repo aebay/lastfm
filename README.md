@@ -14,6 +14,4 @@ All modules can be built and run independently:
 
 ## Deploy
 
-## Test
-
 ## Run
