@@ -22,11 +22,11 @@ object DistinctSongsDriver {
     // count number of unique songs per user
     val uniqueTracksPerUserId = trackLogData
       .map( line => line.split("\t") )
-      .map( arr => {
-        if (arr.length != 6) {
-          println( "Parsed record does not contain 6 elements: " + arr.mkString(", ") )
-          ( arr(0), None )
-        } else ( arr(0), arr(5) )
+      .map( fields => {
+        if (fields.length != 6) {
+          println( "Parsed record does not contain 6 elements: " + fields.mkString(", ") )
+          ( fields(0), None )
+        } else ( fields(0), fields(5) )
       } )
       .distinct() // remove duplicate tracks per user
       .countByKey() // count number of unique tracks per user

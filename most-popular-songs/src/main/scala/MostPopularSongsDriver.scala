@@ -22,11 +22,11 @@ object MostPopularSongsDriver {
     // count number of unique songs per user
     val trackCount = trackLogData
       .map( line => line.split("\t") )
-      .map( arr => {
-        if (arr.length != 6) {
-          println( "Parsed record does not contain 6 elements: " + arr.mkString(", ") )
+      .map( fields => {
+        if (fields.length != 6) {
+          println( "Parsed record does not contain 6 elements: " + fields.mkString(", ") )
           ( (None, None), 1 )
-        } else ( (arr(3), arr(5)), 1 )
+        } else ( (fields(3), fields(5)), 1 )
       } )
       .reduceByKey( _+_ )
 
