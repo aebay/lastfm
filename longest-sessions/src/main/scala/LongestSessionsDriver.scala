@@ -5,7 +5,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
   * Created by AEB on 04/06/17.
   */
-object DistinctSongsDriver {
+object LongestSessionsDriver {
 
   def main(args: Array[String]) {
 
@@ -32,8 +32,8 @@ object DistinctSongsDriver {
       .countByKey() // count number of unique tracks per user
 
     // output summary to disk
-    val writer = new PrintWriter( new File( "/tmp/distinct-songs.tsv" ) )
-    for ( (userId, numberOfTracks) <- uniqueTracksPerUserId ) writer.append( s"$userId\t$numberOfTracks\n" )
+    val writer = new PrintWriter( new File( "/tmp/distinct-songs.csv" ) )
+    for ( (userId, numberOfTracks) <- uniqueTracksPerUserId ) writer.append( s"$userId, $numberOfTracks\n" )
     writer.close()
 
     sparkContext.stop()

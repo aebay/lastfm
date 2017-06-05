@@ -5,13 +5,13 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
   * Created by AEB on 04/06/17.
   */
-object DistinctSongsDriver {
+object MostPopularSongsDriver {
 
   def main(args: Array[String]) {
 
     // Spark configuration
     val sparkConf = new SparkConf()
-      .setAppName("Distinct songs per user")
+      .setAppName("Top 100 most popular songs")
       .setMaster( "local[*]" )
     val sparkContext = new SparkContext( sparkConf )
 
@@ -20,23 +20,26 @@ object DistinctSongsDriver {
     val trackLogData = sparkContext.textFile( trackLogFile )
 
     // count number of unique songs per user
-    val uniqueTracksPerUserId = trackLogData
+    val trackCount = trackLogData
       .map( line => line.split("\t") )
       .map( arr => {
         if (arr.length != 6) {
           println( "Parsed record does not contain 6 elements: " + arr.mkString(", ") )
-          ( arr(0), None )
-        } else ( arr(0), arr(5) )
+          ( (None, None), 1 )
+        } else ( (arr(3), arr(5)), 1 )
       } )
-      .distinct() // remove duplicate tracks per user
-      .countByKey() // count number of unique tracks per user
+      .reduceByKey( _+_ )
 
-    // output summary to disk
-    val writer = new PrintWriter( new File( "/tmp/distinct-songs.tsv" ) )
-    for ( (userId, numberOfTracks) <- uniqueTracksPerUserId ) writer.append( s"$userId\t$numberOfTracks\n" )
+    // retrieve top 100 songs by number of times users have listened to them
+    val mostPopularSongs = trackCount.takeOrdered( 100 )( Ordering[Int].reverse.on( x => x._2 ) )
+
+    // output list to disk
+    val writer = new PrintWriter( new File( "/tmp/most-popular-songs.tsv" ) )
+    for ( ((artist, track), count) <- mostPopularSongs ) writer.append( s"$artist\t$track\t$count\n" )
     writer.close()
 
     sparkContext.stop()
 
   }
+
 }
