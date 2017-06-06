@@ -30,38 +30,45 @@ object LongestSessionsDriver {
         if (fields.length != 6) {
           println( "Parsed record does not contain 6 elements: " + fields.mkString(", ") )
           ( fields(0), (None,None) )
-        } else ( fields(0), (fields(5), getTimestamp( fields(1) )) )
+        } else ( fields(0), (fields(5).mkString, getTimestamp( fields(1) )) )
       } )
       .groupByKey()
       .map( playLists => {
 
-        // sort the track-timestamp pairs into order
-        //( playLists._1, playLists._2.toList.sorted( Ordering[Option[Long]].on( (x:(java.io.Serializable,Option[Long])) => x._2 ) ) )
+        // sort the track-timestamp pairs into timestamp order
         val orderedTracks = playLists._2.toList.sorted( Ordering[Option[Long]].on( (x:(java.io.Serializable,Option[Long])) => x._2 ) )
 
         // build a list of play lists and session duration
         var firstTimestamp = orderedTracks(0)._2
-        var lastTimestamp = None
-        val playListSession = List.newBuilder[ (List[java.io.Serializable],Long) ]
-        var playList = List.newBuilder[ java.io.Serializable ]
-        for ( ( track, timestamp ) <- orderedTracks ) {
+        var lastTimestamp = orderedTracks(0)._2
+        val playListAndLength = List.newBuilder[ (List[String],Long) ]
+        var playList = List.newBuilder[ String ]
+        for ( ( track : String, timestamp ) <- orderedTracks ) {
 
+          val timestampDelta : Long = timestamp.get - lastTimestamp.get
+
+          // add new session play list and length to list and reset
+          if ( timestampDelta > 1200000 ) {
+
+            val sessionLength = lastTimestamp.get - firstTimestamp.get
+            playListAndLength += ((playList.result(), sessionLength ))
+            playList.clear()
+            firstTimestamp = timestamp
+
+          }
+
+          // update current session play list
           playList += track
           lastTimestamp = timestamp
-          if ( timestamp - lastTimestamp > 1200000 ) {
-            lastTimestamp =
-          }
 
         }
 
-
-
-        // iterate through the list of sorted tracks
-
+        // return a tuple pair of userId mapped to an array of play lists with session length
+        ( playLists._1, playListAndLength.result() )
 
       })
-      .collect()
-
+      .flatMapValues( identity )
+      .takeOrdered(10)(Ordering[Long].reverse.on( x => x._2._2) )
 
 
     // output summary to disk
@@ -72,6 +79,15 @@ object LongestSessionsDriver {
     sparkContext.stop()
 
   }
+
+  /**
+    * Class to represent metadata of a playlist session.
+    *
+    * @param startTimestamp
+    * @param endTimestamp
+    * @param playlist
+    */
+  case class Session( startTimestamp:Long, endTimestamp:Long, playlist:List[String] )
 
   /**
     * Converts string to a timestamp object.
