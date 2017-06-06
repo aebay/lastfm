@@ -33,16 +33,16 @@ object LongestSessionsDriver {
         } else ( fields(0), (fields(5).mkString, getTimestamp( fields(1) )) )
       } )
       .groupByKey()
-      .map( playLists => {
+      .map( playlists => {
 
         // sort the track-timestamp pairs into timestamp order
-        val orderedTracks = playLists._2.toList.sorted( Ordering[Option[Long]].on( (x:(java.io.Serializable,Option[Long])) => x._2 ) )
+        val orderedTracks = playlists._2.toList.sorted( Ordering[Option[Long]].on( (x:(java.io.Serializable,Option[Long])) => x._2 ) )
 
         // build a list of play lists and session duration
         var firstTimestamp = orderedTracks(0)._2
         var lastTimestamp = orderedTracks(0)._2
-        val playListAndLength = List.newBuilder[ (List[String],Long) ]
-        var playList = List.newBuilder[ String ]
+        val playlistSession = List.newBuilder[ (Session,Long) ]
+        var playlist = List.newBuilder[ String ]
         for ( ( track : String, timestamp ) <- orderedTracks ) {
 
           val timestampDelta : Long = timestamp.get - lastTimestamp.get
@@ -51,29 +51,30 @@ object LongestSessionsDriver {
           if ( timestampDelta > 1200000 ) {
 
             val sessionLength = lastTimestamp.get - firstTimestamp.get
-            playListAndLength += ((playList.result(), sessionLength ))
-            playList.clear()
+            val session = Session( firstTimestamp.get, lastTimestamp.get, playlist.result() )
+            playlistSession += (( session, sessionLength ))
+            playlist.clear()
             firstTimestamp = timestamp
 
           }
 
           // update current session play list
-          playList += track
+          playlist += track
           lastTimestamp = timestamp
 
         }
 
-        // return a tuple pair of userId mapped to an array of play lists with session length
-        ( playLists._1, playListAndLength.result() )
+        // return a tuple pair of userId mapped to an array of playlists with session length
+        ( playlists._1, playlistSession.result() )
 
       })
       .flatMapValues( identity )
       .takeOrdered(10)(Ordering[Long].reverse.on( x => x._2._2) )
 
-
     // output summary to disk
-    val writer = new PrintWriter( new File( "/tmp/distinct-songs.csv" ) )
-    /*for ( (userId, numberOfTracks) <- uniqueTracksPerUserId ) writer.append( s"$userId, $numberOfTracks\n" )*/
+    val writer = new PrintWriter( new File( "/tmp/longest-sessions.tsv" ) )
+    for ( (userId, (session, _)) <- sessionDetails )
+      writer.append(s"$userId\t${setTimestamp(session.startTimestamp)}\t${setTimestamp(session.endTimestamp)}\t${session.playlist}\n")
     writer.close()
 
     sparkContext.stop()
@@ -109,14 +110,16 @@ object LongestSessionsDriver {
   }
 
   /**
-    * Ordering implicit for timestamps.
+    * Formats a long/UNIX representation of the timestamp.
     *
-    * https://stackoverflow.com/questions/29985911/sort-scala-arraybuffer-of-timestamp
-    *
+    * @param unixTimestamp
     * @return
     */
-  /*implicit def ordered: Ordering[Long] = new Ordering[Long] {
-    def compare(x: Long, y: Long): Int = x compareTo y
-  }*/
+  def setTimestamp( unixTimestamp: Long ) : String = {
+
+    val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    format.format(new Timestamp( unixTimestamp ) )
+
+  }
 
 }
