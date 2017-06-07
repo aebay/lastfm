@@ -5,11 +5,11 @@
     <parent>
         <artifactId>lastfm</artifactId>
         <groupId>org.uk.aeb</groupId>
-        <version>0.5-SNAPSHOT</version>
+        <version>0.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>longest-sessions</artifactId>
+    <artifactId>most-popular-songs</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
