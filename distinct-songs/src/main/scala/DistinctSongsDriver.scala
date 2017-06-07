@@ -1,5 +1,6 @@
 import java.io.{File, PrintWriter}
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -9,15 +10,18 @@ object DistinctSongsDriver {
 
   def main(args: Array[String]) {
 
+    // parameters
+    val sparkParams = ConfigFactory.load( "spark.properties" );
+    val appParams = ConfigFactory.load( "application.properties" );
+
     // Spark configuration
     val sparkConf = new SparkConf()
-      .setAppName("Distinct songs per user")
-      .setMaster( "local[*]" )
+      .setMaster( sparkParams.getString( "spark.master" ) )
+      .setAppName( sparkParams.getString("app.name") )
     val sparkContext = new SparkContext( sparkConf )
 
     // read in source data
-    val trackLogFile = "/data/lastfm/userid-timestamp-artid-artname-traid-traname.tsv"
-    val trackLogData = sparkContext.textFile( trackLogFile )
+    val trackLogData = sparkContext.textFile( appParams.getString( "input.file.path" ) )
 
     // count number of unique songs per user
     val uniqueTracksPerUserId = trackLogData
@@ -32,7 +36,7 @@ object DistinctSongsDriver {
       .countByKey() // count number of unique tracks per user
 
     // output summary to disk
-    val writer = new PrintWriter( new File( "/tmp/distinct-songs.tsv" ) )
+    val writer = new PrintWriter( new File( appParams.getString( "output.file.path" ) ) )
     for ( (userId, numberOfTracks) <- uniqueTracksPerUserId ) writer.append( s"$userId\t$numberOfTracks\n" )
     writer.close()
 

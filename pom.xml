@@ -21,6 +21,7 @@
         <spark.version>2.1.1</spark.version>
         <junit.version>4.12</junit.version>
         <scala-test.version>2.4.16</scala-test.version>
+        <typesafe.version>1.3.1</typesafe.version>
 
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -49,6 +50,13 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-core_${scala.compat.version}</artifactId>
                 <version>${spark.version}</version>
+            </dependency>
+
+            <!-- CONFIG -->
+            <dependency>
+                <groupId>com.typesafe</groupId>
+                <artifactId>config</artifactId>
+                <version>${typesafe.version}</version>
             </dependency>
 
             <!-- TESTING -->

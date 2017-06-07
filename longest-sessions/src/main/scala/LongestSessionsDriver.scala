@@ -2,6 +2,7 @@ import java.io.{File, PrintWriter}
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.{Failure, Success, Try}
@@ -13,15 +14,18 @@ object LongestSessionsDriver {
 
   def main(args: Array[String]) {
 
+    // parameters
+    val sparkParams = ConfigFactory.load( "spark.properties" );
+    val appParams = ConfigFactory.load( "application.properties" );
+
     // Spark configuration
     val sparkConf = new SparkConf()
-      .setAppName("The 10 longest sessions")
-      .setMaster( "local[*]" )
+      .setMaster( sparkParams.getString( "spark.master" ) )
+      .setAppName( sparkParams.getString("app.name") )
     val sparkContext = new SparkContext( sparkConf )
 
     // read in source data
-    val trackLogFile = "/data/lastfm/userid-timestamp-artid-artname-traid-traname.tsv"
-    val trackLogData = sparkContext.textFile( trackLogFile )
+    val trackLogData = sparkContext.textFile( appParams.getString( "input.file.path" ) )
 
     // calculate the 10 longest sessions
     val sessionDetails = trackLogData
@@ -72,7 +76,7 @@ object LongestSessionsDriver {
       .takeOrdered(10)(Ordering[Long].reverse.on( x => x._2._2) )
 
     // output summary to disk
-    val writer = new PrintWriter( new File( "/tmp/longest-sessions.tsv" ) )
+    val writer = new PrintWriter( new File( appParams.getString( "output.file.path" ) ) )
     for ( (userId, (session, _)) <- sessionDetails )
       writer.append(s"$userId\t${setTimestamp(session.startTimestamp)}\t${setTimestamp(session.endTimestamp)}\t${session.playlist}\n")
     writer.close()

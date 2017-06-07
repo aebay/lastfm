@@ -1,5 +1,6 @@
 import java.io.{File, PrintWriter}
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -9,15 +10,18 @@ object MostPopularSongsDriver {
 
   def main(args: Array[String]) {
 
+    // parameters
+    val sparkParams = ConfigFactory.load( "spark.properties" );
+    val appParams = ConfigFactory.load( "application.properties" );
+
     // Spark configuration
     val sparkConf = new SparkConf()
-      .setAppName("Top 100 most popular songs")
-      .setMaster( "local[*]" )
+      .setMaster( sparkParams.getString( "spark.master" ) )
+      .setAppName( sparkParams.getString("app.name") )
     val sparkContext = new SparkContext( sparkConf )
 
     // read in source data
-    val trackLogFile = "/data/lastfm/userid-timestamp-artid-artname-traid-traname.tsv"
-    val trackLogData = sparkContext.textFile( trackLogFile )
+    val trackLogData = sparkContext.textFile( appParams.getString( "input.file.path" ) )
 
     // count number of unique songs per user
     val trackCount = trackLogData
@@ -34,7 +38,7 @@ object MostPopularSongsDriver {
     val mostPopularSongs = trackCount.takeOrdered( 100 )( Ordering[Int].reverse.on( x => x._2 ) )
 
     // output list to disk
-    val writer = new PrintWriter( new File( "/tmp/most-popular-songs.tsv" ) )
+    val writer = new PrintWriter( new File( appParams.getString( "output.file.path" ) ) )
     for ( ((artist, track), count) <- mostPopularSongs ) writer.append( s"$artist\t$track\t$count\n" )
     writer.close()
 

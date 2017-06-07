@@ -26,6 +26,12 @@
             <artifactId>spark-core_${scala.compat.version}</artifactId>
         </dependency>
 
+        <!-- CONFIG -->
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+        </dependency>
+
         <!-- TESTING -->
         <dependency>
             <groupId>junit</groupId>
