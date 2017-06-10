@@ -113,6 +113,7 @@ object LongestSessionsDriver {
       for ( ( track : String, timestamp ) <- orderedTracks ) {
 
         val timestampDelta : Long = timestamp.get - lastTimestamp.get
+        if ( timestampDelta < 0 ) println( "Negative timestamp ordering detected, tracks will not be in the correct order" )
 
         // add new session play list and length to list and reset
         if ( timestampDelta > sessionMaxMillisecsBetweenTracks ) {
