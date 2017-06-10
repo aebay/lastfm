@@ -51,7 +51,7 @@ object DistinctSongsDriver {
   def parseRecord( fields : Array[String]) : (String, String) = {
     if (fields.length != 6) {
       println( "Parsed record does not contain 6 elements: " + fields.mkString(", ") )
-      ( fields(0), "None" )
+      ( fields(0), "Unknown" )
     } else ( fields(0), fields(5) )
   }
 
